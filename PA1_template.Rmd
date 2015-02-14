@@ -1,17 +1,37 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: 'Reproducible Research: Peer Assessment 1'
+output:
   html_document:
-    keep_md: true
+    keep_md: no
+  pdf_document: default
 ---
 
+opts_chunk$set(echo=TRUE,cache=FALSE)
 
 ## Loading and preprocessing the data
 
-
+```{r Load and Preprocessing the data,results='asis'}
+sourcefilename<-"activity.zip"            # creates a variables with the source zip file name
+unzip(sourcefilename,overwrite=TRUE)      # unzips the source file and overwrites the existing file if present
+DF<-read.csv("activity.csv",header=TRUE,sep=",",na.string="NA")  # read in the data file
+```
 
 ## What is mean total number of steps taken per day?
+```{r determine mean number of steps per day}
+steps_per_day<-aggregate(steps ~ date,DF,FUN=sum,na.rm=TRUE)        # aggregate function to sum the steps by the dates groups
+names(steps_per_day)[names(steps_per_day)=="steps"] <- "steps.sum"  # rename "steps"" column to "steps.sum"
 
+# historgram of step per day
+hist(steps_per_day$steps.sum,breaks=15,xlab="Steps per Day",main="Frequency Vs. Steps per Day")
+
+options(scipen=999)  # Force R not to use scientific notation
+mean_steps <- round(mean(steps_per_day$steps.sum),digits=2)     # calculate the mean of total steps per day
+median_steps <- round(median(steps_per_day$steps.sum),digits=2) # calculate the median of total steps per day
+```
+
+The mean and median of the total number of Steps per Day:   
+Mean:   `r mean_steps`   
+Median: `r median_steps`   
 
 
 ## What is the average daily activity pattern?
