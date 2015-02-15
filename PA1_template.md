@@ -163,7 +163,6 @@ After : 10766.19
 **Median**   
 Before: 10765   
 After : 10766.19    
-------------------------  
 Difference: 1.19
 
 **What is the impact of imputing missing data on the estimates of the total daily number of steps?**
