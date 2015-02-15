@@ -8,6 +8,11 @@ output:
 
 opts_chunk$set(echo=TRUE,cache=FALSE)
 
+```{r load library,message=FALSE}
+library(dplyr)   # load the dplyr library
+library(lattice) # load the lattice library
+```
+
 ## Loading and preprocessing the data
 
 1. Show any code that is needed to
@@ -16,10 +21,11 @@ opts_chunk$set(echo=TRUE,cache=FALSE)
 
 3. Process/transform the data (if necessary) into a format suitable for your analysis
 
-```{r Load and Preprocessing the data,results='asis'}
+```{r Load and Preprocessing the data}
 sourcefilename<-"activity.zip"            # creates a variables with the source zip file name
 unzip(sourcefilename,overwrite=TRUE)      # unzips the source file and overwrites the existing file if present
 DF<-read.csv("activity.csv",header=TRUE,sep=",",na.string="NA")  # read in the data file
+head(DF)
 ```
 
 ## What is mean total number of steps taken per day?
@@ -55,16 +61,16 @@ Median: `r median_steps`
 
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-```{r average numbers of steps per interval}
+```{r average number of steps per interval}
 # calculate the mean of each 5 minute time interval
 interval_mean<-aggregate(steps ~ interval,DF,FUN=mean,na.rm=TRUE)
 
 # plot the mean values of each 5 minute time interval
-plot(interval_mean$interval,interval_mean$steps,type="p",xlab="5 Min Time Intervals",ylab="Average Number Of Steps",
+plot(interval_mean$interval,interval_mean$steps,type="l",xlab="5 Min Time Intervals",ylab="Average Number Of Steps",
      main="Average Steps Vs. 5 Minute Time Interval")
 
 # calculate the smooth average across all 5 minute step intervals
-smooth_avg<-smooth.spline(interval_mean$interval,interval_mean$steps, df=30)  # calculate smoothing average across all intervals
+smooth_avg<-smooth.spline(interval_mean$interval,interval_mean$steps,df=20)  # calculate smoothing average across all intervals
 max_avg_value    <- round(max(smooth_avg$y),digits=2)                         # determine the max average value
 interval_max_avg <- smooth_avg$x[smooth_avg$y==max(smooth_avg$y)]             # determine the interval with max average value
 
@@ -76,7 +82,7 @@ axis(1,at=interval_max_avg)                                   # plot the x inter
 
 ```
 
-The maximum average number of steps is `r max_avg_value` and is found at time interval `r interval_max_avg`.
+The maximum average number of steps accross all data points is `r max_avg_value` and is found at time interval `r interval_max_avg`.
 
 ## Imputing missing values
 
@@ -90,13 +96,21 @@ Note that there are a number of days/intervals where there are missing values (c
 
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
+**Description how imputing the NA values was performed:**
+
+The method used to impute the missing "NA" values in the data set was to create a new column in the dataset called "steps.mean" and insert the mean value of the interval into this column for all data points (including the NA values) by the interval value.  The data frame was then parsed to identify which rows has "NA"" values and then replace that value with the mean interval value where necessary.  Once the replacement value was inserted the mean column was no longer needed and was then removed.
+
 ```{r total number of Nas}
 total_na_count <- sum(is.na(DF$steps)) # calculate the total number of NAs in the data set
 
-library(dplyr)  # load the dplyr library
-DF_groups <- merge(DF,aggregate(steps ~ interval, data=DF,mean),by="interval",suffix=c("",".mean"))  # calculate the interval group means
-DF_groups <- DF_groups %>%  mutate(steps = ifelse(is.na(steps),steps.mean,steps))  # step the value to the mean where step value is NA
-DF_groups <- DF_groups[,c(1,2,3)]  # remove the mean column
+ # calculate the interval group means
+DF_groups <- merge(DF,aggregate(steps ~ interval, data=DF,mean),by="interval",suffix=c("",".mean"))
+
+# step the value to the mean where step value is NA
+DF_groups <- DF_groups %>%  mutate(steps = ifelse(is.na(steps),steps.mean,steps))  
+
+# remove the mean column
+DF_groups <- DF_groups[,c(1,2,3)]  
 
 steps_per_day2<-aggregate(steps ~ date,DF_groups,FUN=sum)               # aggregate function to sum the steps by the dates groups
 names(steps_per_day2)[names(steps_per_day2)=="steps"] <- "steps.sum"    # rename "steps"" column to "steps.sum" 
@@ -108,6 +122,8 @@ mean_steps2 <- round(mean(steps_per_day2$steps.sum),digits=2)     # calculate th
 median_steps2 <- round(median(steps_per_day2$steps.sum),digits=2) # calculate the median of total steps per day
 
 ```
+
+**Total Number of NAs in the dataset:** `r total_na_count`
 
 **The mean and median of the total number of Steps per Day values (with the NAs removed):**  
 Mean:   `r mean_steps2`   
@@ -140,4 +156,17 @@ For this part the weekdays() function may be of some help here. Use the dataset 
 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
+```{r weekday vs weekend}
+# create a factor column with the values of "weekend" or "weekday" based on the date in the row provided.
+DF_groups$day_type <- factor(ifelse(weekdays(strptime(DF_groups$date,format="%Y-%m-%d"))=="Sunday" 
+                                    | weekdays(strptime(DF_groups$date,format="%Y-%m-%d"))=="Saturday","weekend","weekday"))
+
+# aggregate the mean steps per day for the weekday and weekends 
+mean_steps_per_day_type <- aggregate(steps ~ interval + day_type, data = DF_groups, mean)
+
+# plot a panel xyplot do display the mean steps per day for the weekday and weekends
+xyplot(steps ~ interval | day_type, data=mean_steps_per_day_type, type = "l", layout = c(1, 2), 
+       xlab = "5 Min Time Intervals", ylab = "Number of steps",col="black")
+
+```
 
