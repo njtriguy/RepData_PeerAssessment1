@@ -9,7 +9,7 @@ output:
 opts_chunk$set(echo=TRUE,cache=FALSE)
 
 ```{r load library,message=FALSE}
-library(dplyr)   # load the dplyr library
+library(dplyr)   # load the dplyr library 
 library(lattice) # load the lattice library
 ```
 
