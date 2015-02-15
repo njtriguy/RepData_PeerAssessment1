@@ -140,7 +140,6 @@ After : `r mean_steps2`
 **Median**   
 Before: `r median_steps`   
 After : `r median_steps2`    
-------------------------  
 Difference: `r median_steps2 - median_steps`
 
 **What is the impact of imputing missing data on the estimates of the total daily number of steps?**
