@@ -37,14 +37,14 @@ steps_per_day<-aggregate(steps ~ date,DF,FUN=sum,na.rm=TRUE)        # aggregate 
 names(steps_per_day)[names(steps_per_day)=="steps"] <- "steps.sum"  # rename "steps"" column to "steps.sum"
 
 # historgram of step per day
-hist(steps_per_day$steps.sum,breaks=15,xlab="Steps per Day",main="Frequency Vs. Steps per Day")
+hist(steps_per_day$steps.sum,xlab="Steps per Day",main="Frequency Vs. Steps per Day")
 
 options(scipen=999)  # Force R not to use scientific notation
 mean_steps <- round(mean(steps_per_day$steps.sum),digits=2)     # calculate the mean of total steps per day
 median_steps <- round(median(steps_per_day$steps.sum),digits=2) # calculate the median of total steps per day
 ```
 
-The mean and median of the total number of Steps per Day:   
+**The mean and median of the total number of Steps per Day:**  
 Mean:   `r mean_steps`   
 Median: `r median_steps`   
 
@@ -64,7 +64,7 @@ plot(interval_mean$interval,interval_mean$steps,type="p",xlab="5 Min Time Interv
      main="Average Steps Vs. 5 Minute Time Interval")
 
 # calculate the smooth average across all 5 minute step intervals
-smooth_avg<-smooth.spline(interval_mean$interval,interval_mean$steps, df=12)  # calculate smoothing average across all intervals
+smooth_avg<-smooth.spline(interval_mean$interval,interval_mean$steps, df=30)  # calculate smoothing average across all intervals
 max_avg_value    <- round(max(smooth_avg$y),digits=2)                         # determine the max average value
 interval_max_avg <- smooth_avg$x[smooth_avg$y==max(smooth_avg$y)]             # determine the interval with max average value
 
@@ -93,9 +93,43 @@ Note that there are a number of days/intervals where there are missing values (c
 ```{r total number of Nas}
 total_na_count <- sum(is.na(DF$steps)) # calculate the total number of NAs in the data set
 
+library(dplyr)  # load the dplyr library
+DF_groups <- merge(DF,aggregate(steps ~ interval, data=DF,mean),by="interval",suffix=c("",".mean"))  # calculate the interval group means
+DF_groups <- DF_groups %>%  mutate(steps = ifelse(is.na(steps),steps.mean,steps))  # step the value to the mean where step value is NA
+DF_groups <- DF_groups[,c(1,2,3)]  # remove the mean column
+
+steps_per_day2<-aggregate(steps ~ date,DF_groups,FUN=sum)               # aggregate function to sum the steps by the dates groups
+names(steps_per_day2)[names(steps_per_day2)=="steps"] <- "steps.sum"    # rename "steps"" column to "steps.sum" 
+
+# historgram of step per day
+hist(steps_per_day2$steps.sum,xlab="Steps per Day (NAs Replaced by Interval Mean)",main="Frequency Vs. Steps per Day")
+
+mean_steps2 <- round(mean(steps_per_day2$steps.sum),digits=2)     # calculate the mean of total steps per day
+median_steps2 <- round(median(steps_per_day2$steps.sum),digits=2) # calculate the median of total steps per day
+
 ```
 
+**The mean and median of the total number of Steps per Day values (with the NAs removed):**  
+Mean:   `r mean_steps2`   
+Median: `r median_steps2` 
 
+**Do these values differ from the estimates from the first part of the assignment?**
+
+The mean values do not differ from the first part of the assignment, however the median values do as can be seen below.
+
+**Mean**  
+Before: `r mean_steps`   
+After : `r mean_steps2`    
+
+**Median**   
+Before: `r median_steps`   
+After : `r median_steps2`    
+------------------------  
+Difference: `r median_steps2 - median_steps`
+
+**What is the impact of imputing missing data on the estimates of the total daily number of steps?**
+
+The impact of imputing missing data on the estimates can have a significant effect on the final results.  This is a good example why it is important to closely document the data handling, processing and analysis steps so that it is clear what the person processing the data intended.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
